@@ -1,0 +1,21 @@
+{
+  "name": "@sim/fmu",
+  "version": "0.6.0",
+  "private": true,
+  "type": "module",
+  "description": "FMU FMI 3.0 Co-Simulation (WASM) de la válvula + transmisor — port fiel del engine de @sim/physics (EP-05, REQ-GEN-02 / TC-GEN-02)",
+  "scripts": {
+    "build": "npm run build:fmu",
+    "build:wasm": "asc assembly/index.ts --outFile dist/ValvulaTransmisor.wasm -O3 --noAssert",
+    "build:fmu": "npm run build:wasm && node scripts/pack-fmu.mjs",
+    "test": "npm run build:fmu && vitest run"
+  },
+  "devDependencies": {
+    "@sim/physics": "^0.4.0",
+    "@sim/shared": "^0.4.0",
+    "@types/adm-zip": "^0.5.7",
+    "adm-zip": "^0.5.16",
+    "assemblyscript": "^0.27.35",
+    "vitest": "^4.1.8"
+  }
+}

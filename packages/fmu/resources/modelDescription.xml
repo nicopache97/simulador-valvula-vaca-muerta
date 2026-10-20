@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  FMU FMI 3.0 Co-Simulation (WASM) del simulador de válvula + transmisor
+  (EP-05, REQ-GEN-02). Física: port fiel del engine de @sim/physics.
+
+  Convención de empaquetado WASM: binaries/wasm32/<modelIdentifier>.wasm
+  (módulo wasm32 core instanciable directamente desde JavaScript, según
+  TC-GEN-02; el draft FMI-LS-WASM define además un perfil de component
+  model wasm32-wasip2 que esta FMU no usa).
+
+  Los value references deben coincidir con assembly/index.ts; los tests de
+  TC-GEN-02 cruzan este XML contra el binario.
+-->
+<fmiModelDescription
+  fmiVersion="3.0.2"
+  modelName="ValvulaTransmisor"
+  instantiationToken="{8f2c9e1a-3b6d-4a7e-9c5f-1d2e4a6b8c0d}"
+  version="0.6.0"
+  description="Simulador de firma de válvulas y calibración de transmisores (Vaca Muerta): válvula con histéresis/fricción/zona muerta, caudal IEC 60534-2-1 con cavitación crítica, transmisor TB→AI y PID. Port de @sim/physics (EP-05, REQ-GEN-02)."
+  generationTool="@sim/fmu — AssemblyScript (EP-05)">
+  <CoSimulation
+    modelIdentifier="ValvulaTransmisor"
+    needsExecutionTool="false"
+    canHandleVariableCommunicationStepSize="true"/>
+  <UnitDefinitions>
+    <Unit name="bar">
+      <BaseUnit kg="1" m="-1" s="-2" factor="100000"/>
+    </Unit>
+    <Unit name="psi">
+      <BaseUnit kg="1" m="-1" s="-2" factor="6894.757293168"/>
+    </Unit>
+    <Unit name="m3/h">
+      <BaseUnit m="3" s="-1" factor="0.000277777777777778"/>
+    </Unit>
+    <Unit name="s">
+      <BaseUnit s="1"/>
+    </Unit>
+  </UnitDefinitions>
+  <DefaultExperiment startTime="0" stepSize="0.01"/>
+  <ModelVariables>
+    <!-- Entradas -->
+    <Float64 name="spBar" valueReference="1" causality="input" variability="continuous" start="30" unit="bar"
+      description="Consigna del PID [bar]. Si no se reescribe, se mantiene el último valor (pending input consumido en el próximo fmi3DoStep)."/>
+    <Int32 name="scenario" valueReference="2" causality="input" variability="discrete" start="0"
+      description="Escenario de proceso: 0=normal, 1=cavitacion, 2=falla_sensor, 3=transitorio_p1."/>
+    <!-- Parámetros (defaults = createSimulation() de @sim/physics) -->
+    <Float64 name="supplyBar" valueReference="10" causality="parameter" variability="fixed" initial="exact" start="100" unit="bar"
+      description="Presión de la fuente aguas arriba [bar]."/>
+    <Float64 name="vesselNominalBar" valueReference="11" causality="parameter" variability="fixed" initial="exact" start="30" unit="bar"
+      description="Presión nominal inicial de la vasija controlada [bar] (P2 en medición downstream); también es la consigna inicial."/>
+    <Float64 name="qDemandNominal" valueReference="12" causality="parameter" variability="fixed" initial="exact" start="150" unit="m3/h"
+      description="Demanda fija aguas abajo de la vasija [m³/h]."/>
+    <Float64 name="capacity" valueReference="13" causality="parameter" variability="fixed" initial="exact" start="5"
+      description="Capacidad de la vasija [(m³/h)/(bar/s)]."/>
+    <Float64 name="cv" valueReference="14" causality="parameter" variability="fixed" initial="exact" start="50"
+      description="Coeficiente de flujo Cv [US gpm/√psi]; el cálculo usa Kv = Cv/1.156."/>
+    <Float64 name="fl" valueReference="15" causality="parameter" variability="fixed" initial="exact" start="0.9"
+      description="Factor de recuperación de presión F_L (IEC 60534-2-1)."/>
+    <Float64 name="valveFrictionFraction" valueReference="16" causality="parameter" variability="fixed" initial="exact" start="0.15"
+      description="Fricción de empaquetadura como fracción del empuje de resorte a carrera completa."/>
+    <Float64 name="valveDeadbandPsi" valueReference="17" causality="parameter" variability="fixed" initial="exact" start="0" unit="psi"
+      description="Zona muerta adicional en presión [psi]."/>
+    <Float64 name="txTau" valueReference="18" causality="parameter" variability="fixed" initial="exact" start="0" unit="s"
+      description="Constante de tiempo del damping del FB AI [s]; 0 = sin filtro."/>
+    <Float64 name="kp" valueReference="19" causality="parameter" variability="fixed" initial="exact" start="2"
+      description="Ganancia proporcional del PID [%/bar]."/>
+    <Float64 name="ti" valueReference="20" causality="parameter" variability="fixed" initial="exact" start="8" unit="s"
+      description="Tiempo integral del PID [s]."/>
+    <Int32 name="measure" valueReference="21" causality="parameter" variability="fixed" initial="exact" start="0"
+      description="Lado de medición del lazo: 0=downstream (PV=P2), 1=upstream (PV=P1)."/>
+    <Float64 name="faultAtSec" valueReference="22" causality="parameter" variability="fixed" initial="exact" start="5" unit="s"
+      description="Escenario falla_sensor: instante de inyección de TB_Sensor_Fault [s]."/>
+    <Float64 name="stepAtSec" valueReference="23" causality="parameter" variability="fixed" initial="exact" start="10" unit="s"
+      description="Escenario transitorio_p1: instante del escalón de presión de fuente [s]."/>
+    <Float64 name="stepToBar" valueReference="24" causality="parameter" variability="fixed" initial="exact" start="140" unit="bar"
+      description="Escenario transitorio_p1: presión de fuente tras el escalón [bar]."/>
+    <Float64 name="rampBarPerSec" valueReference="25" causality="parameter" variability="fixed" initial="exact" start="0.5"
+      description="Escenario cavitacion: rampa de presión de fuente [bar/s]."/>
+    <Float64 name="rampToBar" valueReference="26" causality="parameter" variability="fixed" initial="exact" start="180" unit="bar"
+      description="Escenario cavitacion: presión de fuente final de la rampa [bar]."/>
+    <!-- Salidas -->
+    <Float64 name="pvPercent" valueReference="30" causality="output" variability="continuous" initial="calculated"
+      description="PV del FB AI en % de escala (0–100)."/>
+    <Float64 name="valveOpening" valueReference="31" causality="output" variability="continuous" initial="calculated"
+      description="Posición del vástago [% de carrera]."/>
+    <Float64 name="pAct" valueReference="32" causality="output" variability="continuous" initial="calculated" unit="psi"
+      description="Presión del actuador neumático [psi] (3–15)."/>
+    <Float64 name="flow" valueReference="33" causality="output" variability="continuous" initial="calculated" unit="m3/h"
+      description="Caudal volumétrico a través de la válvula [m³/h] (IEC 60534-2-1)."/>
+    <Float64 name="choked" valueReference="34" causality="output" variability="continuous" initial="calculated"
+      description="Régimen ahogado por cavitación crítica (1.0 = true): ΔP ≥ F_L²·(P1 − r_c·P_v). Se expone como Float64 por el subconjunto Float64/Int32 de la API."/>
+    <Int32 name="quality" valueReference="35" causality="output" variability="discrete" initial="calculated"
+      description="AI.PV.Quality: 0=GOOD, 1=UNCERTAIN, 2=BAD_SENSOR_FAILURE."/>
+    <Float64 name="pvBar" valueReference="36" causality="output" variability="continuous" initial="calculated" unit="bar"
+      description="AI.PV en unidades de ingeniería [bar]."/>
+    <Float64 name="p1Bar" valueReference="37" causality="output" variability="continuous" initial="calculated" unit="bar"
+      description="Presión aguas arriba [bar]."/>
+    <Float64 name="p2Bar" valueReference="38" causality="output" variability="continuous" initial="calculated" unit="bar"
+      description="Presión aguas abajo [bar]."/>
+    <Float64 name="dpChokedBar" valueReference="39" causality="output" variability="continuous" initial="calculated" unit="bar"
+      description="ΔP de inicio de cavitación crítica [bar]: F_L²·(P1 − r_c·P_v)."/>
+    <Float64 name="pidOutPercent" valueReference="40" causality="output" variability="continuous" initial="calculated"
+      description="Salida del PID [% de escala del actuador]."/>
+    <Float64 name="time" valueReference="41" causality="output" variability="continuous" initial="calculated" unit="s"
+      description="Reloj de proceso [s]."/>
+  </ModelVariables>
+  <ModelStructure>
+    <Output valueReference="30"/>
+    <Output valueReference="31"/>
+    <Output valueReference="32"/>
+    <Output valueReference="33"/>
+    <Output valueReference="34"/>
+    <Output valueReference="35"/>
+    <Output valueReference="36"/>
+    <Output valueReference="37"/>
+    <Output valueReference="38"/>
+    <Output valueReference="39"/>
+    <Output valueReference="40"/>
+    <Output valueReference="41"/>
+  </ModelStructure>
+</fmiModelDescription>

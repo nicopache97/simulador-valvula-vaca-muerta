@@ -21,7 +21,7 @@ Simulador de instrumentación industrial para Vaca Muerta. Requerimientos fuente
 
 ## 2. Código reciclado disponible (verificado 2026-10-20)
 
-Implementado en este repo: EP-00 (setup), EP-01 (motor físico), EP-02 (transmisores), EP-03 (engine + worker + protocolo), EP-04 (HMI 4 niveles). Plantillas verificadas en otros proyectos del usuario:
+Implementado en este repo: EP-00 (setup), EP-01 (motor físico), EP-02 (transmisores), EP-03 (engine + worker + protocolo), EP-04 (HMI 4 niveles), EP-05 (FMU FMI 3.0 WASM). Plantillas verificadas en otros proyectos del usuario:
 
 - `~/Documentos/formulario-onbording/tecna-ob/` → base **Vite + React + TS + Tailwind + Vitest** lista para copiar (mejor `vite.config.ts` / `tsconfig` / eslint flat del árbol).
 - `~/Documentos/manhattan-one/` → patrón de **monorepo workspaces** (`apps/*` + `packages/*`, exports por `src/index.ts`).
@@ -31,9 +31,11 @@ Implementado en este repo: EP-00 (setup), EP-01 (motor físico), EP-02 (transmis
 - `~/Documentos/manhattan-one/packages/ui-components/src/audio-visualize/` → patrón de **loop en vivo + cleanup** (rAF/canvas) como referencia del worker de simulación.
 - `~/Documentos/cursos/02-scada.md` y `04-proyecto-integrador.md` → modelo de dominio SCADA (tags, scan classes, ACK, shelving, interlocks).
 
-**No existe en ningún lado** (se escribe de cero): FMU. Engine de orquestación, worker de simulación y contrato de mensajes worker↔UI: EP-03, vive en `packages/physics/src/engine.ts` (puro, determinista), `apps/web/src/sim/` (worker Vite + loop con reloj inyectado) y `packages/shared/src/index.ts` (protocolo tipado). Los bloques RB/TB/AI y el PID mínimo de transmisores viven en `packages/physics/src/transmitter.ts` y `pid.ts` (EP-02, v0.3.0). La HMI de 4 niveles vive en `apps/web/src/{state,components,views}` (EP-04, v0.5.0).
+**No existe en ningún lado** (se escribe de cero): — (todo lo pendiente está en épicas). Engine de orquestación, worker de simulación y contrato de mensajes worker↔UI: EP-03, vive en `packages/physics/src/engine.ts` (puro, determinista), `apps/web/src/sim/` (worker Vite + loop con reloj inyectado) y `packages/shared/src/index.ts` (protocolo tipado). Los bloques RB/TB/AI y el PID mínimo de transmisores viven en `packages/physics/src/transmitter.ts` y `pid.ts` (EP-02, v0.3.0). La HMI de 4 niveles vive en `apps/web/src/{state,components,views}` (EP-04, v0.5.0). La FMU FMI 3.0 vive en `packages/fmu` (EP-05, v0.6.0).
 
 **Decisión de gráficos (EP-04, v0.5.0):** tendencias con **lightweight-charts** (series temporales, volcado a 20 FPS desde el feed de 100 Hz del worker) y **firma de válvula (plano X-Y P_act vs. carrera) en SVG propio** — lightweight-charts solo soporta tiempo monótono creciente y el lazo de histéresis tiene ramas no monótonas en el eje X más un marcador en vivo. El ciclo de firma corre síncrono en el hilo de UI sobre la física pura de `@sim/physics` (mismo procedimiento que TC-FUN-VAL-01).
+
+**Decisión FMU (EP-05, v0.6.0):** física portada a **AssemblyScript** (`packages/fmu/assembly/index.ts`), port fiel del engine (bit-exact vs `@sim/physics`, verificado en TC-GEN-02) — no una reimplementación. Empaquetado `binaries/wasm32/<modelIdentifier>.wasm` (módulo wasm32 core instanciable desde JS, como pide TC-GEN-02); el perfil `wasm32-wasip2` del draft FMI-LS-WASM (Component Model + WIT) queda descartado: no lo soporta AssemblyScript ni lo requiere el TC. Subconjunto de API FMI 3.0 sin strings/callbacks: instancia = índice i32, arrays VR/values por **memoria lineal en offsets de scratch exportados** (análogo a punteros C). `modelDescription.xml` validado contra el **XSD oficial FMI 3.0.2** vendido en `packages/fmu/schema/` (xmllint en el test, skip si no hay xmllint); FMPy descartado porque no ejecuta FMUs WASM. El artefacto `.fmu` es build (gitignored): `npm run build:fmu` (raíz).
 
 ## 3. Principios de trabajo (innegociables)
 
@@ -67,7 +69,7 @@ Implementado en este repo: EP-00 (setup), EP-01 (motor físico), EP-02 (transmis
 | EP-02 | Transmisor inteligente: bloques RB/TB/FB, damping, calidad de señal, autocalibración y turndown | REQ-FUN-TRM-01/02 | hecho (v0.3.0) |
 | EP-03 | Worker de simulación en tiempo real (100 Hz) + contrato de tipos compartidos | REQ-GEN-01, REQ-NFUN-PERF-01 | hecho (v0.4.0) |
 | EP-04 | HMI niveles 1–4 (ISA-101): tendencias, indicadores de barra con bandas, faceplate de firma de válvula, calibración | REQ-UI-01..04 | hecho (v0.5.0) |
-| EP-05 | FMU FMI 3.0 (co-simulation básica) vía AssemblyScript/WASM + validación con FMPy | REQ-GEN-02, TC-GEN-02 | pendiente |
+| EP-05 | FMU FMI 3.0 (co-simulation) vía AssemblyScript/WASM + validación del modelDescription.xml contra el XSD oficial 3.0.2 | REQ-GEN-02, TC-GEN-02 | hecho (v0.6.0) |
 | EP-06 | Backend: RBAC (Operador/Técnico/Ingeniero), auditoría, exportación CSV/JSON de tendencias | REQ-NFUN-SEC-01, REQ-NFUN-PORT-01 | pendiente |
 | EP-07 | Recorrido e2e único + modo "explicación" auto-contextualizada | principio Con propósito | pendiente |
 
