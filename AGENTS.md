@@ -37,6 +37,8 @@ Implementado en este repo: EP-00 (setup), EP-01 (motor físico), EP-02 (transmis
 
 **Decisión FMU (EP-05, v0.6.0):** física portada a **AssemblyScript** (`packages/fmu/assembly/index.ts`), port fiel del engine (bit-exact vs `@sim/physics`, verificado en TC-GEN-02) — no una reimplementación. Empaquetado `binaries/wasm32/<modelIdentifier>.wasm` (módulo wasm32 core instanciable desde JS, como pide TC-GEN-02); el perfil `wasm32-wasip2` del draft FMI-LS-WASM (Component Model + WIT) queda descartado: no lo soporta AssemblyScript ni lo requiere el TC. Subconjunto de API FMI 3.0 sin strings/callbacks: instancia = índice i32, arrays VR/values por **memoria lineal en offsets de scratch exportados** (análogo a punteros C). `modelDescription.xml` validado contra el **XSD oficial FMI 3.0.2** vendido en `packages/fmu/schema/` (xmllint en el test, skip si no hay xmllint); FMPy descartado porque no ejecuta FMUs WASM. El artefacto `.fmu` es build (gitignored): `npm run build:fmu` (raíz).
 
+**Decisión paleta de tendencias (corrección v0.9.0):** las series de la tendencia usan **paleta Okabe-Ito** (segura para daltónicos) + codificación redundante grosor/trazo —excepción deliberada al gris ISA-101: una paleta 100% grises hacía las series indistinguibles, y la legibilidad de la información de proceso manda (el color saturado sigue reservado a alarmas en todo el resto de la HMI). El Nivel 1 ganó un esquema de planta SVG propio clickeable y el símbolo de válvula del P&ID refleja la apertura en vivo con distintivo de "vástago pegado" (stick-slip). La Calibración AMS lleva ayuda contextual (i) por parámetro (REQ-UI-06).
+
 ## 3. Principios de trabajo (innegociables)
 
 ### Vago

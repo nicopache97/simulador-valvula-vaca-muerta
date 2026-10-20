@@ -56,7 +56,7 @@ export function TopBar() {
       <div className="flex items-baseline gap-2">
         <h1 className="text-base font-bold text-neutral-950">Simulador Vaca Muerta</h1>
         <span className="rounded bg-neutral-300 px-1.5 py-0.5 font-mono text-xs text-neutral-700">
-          v0.8.0
+          v0.9.0
         </span>
       </div>
 

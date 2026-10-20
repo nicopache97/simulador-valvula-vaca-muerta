@@ -10,6 +10,8 @@
  */
 import { useState } from 'react'
 import { SignatureChart } from './SignatureChart'
+import { CalParamInfo } from './CalParamHelp'
+import type { CalParam } from './cal-help-content'
 import { useSim, type ModalTab } from '../state/sim-context'
 
 function SignatureTab() {
@@ -56,6 +58,9 @@ function CalibrationTab() {
   const [tau, setTau] = useState('0')
   const [zeroTrim, setZeroTrim] = useState('')
   const [spanTrim, setSpanTrim] = useState('')
+  /** Panel de ayuda contextual abierto (REQ-UI-06); uno solo a la vez. */
+  const [help, setHelp] = useState<CalParam | null>(null)
+  const toggleHelp = (param: CalParam) => setHelp((cur) => (cur === param ? null : param))
   const denied = role === 'OPERATOR'
   // Offline el botón queda bloqueado (validación local, TC-UI-02); online se
   // habilita y es el servidor quien rechaza con 403 → ERR_ACCESS_DENIED
@@ -81,60 +86,80 @@ function CalibrationTab() {
         </p>
       )}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <label className="flex flex-col gap-1 text-xs text-neutral-600">
-          LRV (bar)
+        <div className="relative flex flex-col gap-1">
+          <span className="flex items-center justify-between text-xs text-neutral-600">
+            LRV (bar)
+            <CalParamInfo param="lrv" open={help === 'lrv'} onToggle={() => toggleHelp('lrv')} />
+          </span>
           <input
             data-testid="calib-lrv"
             type="number"
+            aria-label="LRV (bar)"
             value={lrv}
             onChange={(e) => setLrv(e.target.value)}
             className={field}
           />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-neutral-600">
-          URV (bar)
+        </div>
+        <div className="relative flex flex-col gap-1">
+          <span className="flex items-center justify-between text-xs text-neutral-600">
+            URV (bar)
+            <CalParamInfo param="urv" open={help === 'urv'} onToggle={() => toggleHelp('urv')} />
+          </span>
           <input
             data-testid="calib-urv"
             type="number"
+            aria-label="URV (bar)"
             value={urv}
             onChange={(e) => setUrv(e.target.value)}
             className={field}
           />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-neutral-600">
-          Damping τ (s)
+        </div>
+        <div className="relative flex flex-col gap-1">
+          <span className="flex items-center justify-between text-xs text-neutral-600">
+            Damping τ (s)
+            <CalParamInfo param="tau" open={help === 'tau'} onToggle={() => toggleHelp('tau')} />
+          </span>
           <input
             data-testid="calib-tau"
             type="number"
             min={0}
             step={0.1}
+            aria-label="Damping τ (s)"
             value={tau}
             onChange={(e) => setTau(e.target.value)}
             className={field}
           />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-neutral-600">
-          Zero Trim · patrón (bar)
+        </div>
+        <div className="relative flex flex-col gap-1">
+          <span className="flex items-center justify-between text-xs text-neutral-600">
+            Zero Trim · patrón (bar)
+            <CalParamInfo param="zero" open={help === 'zero'} onToggle={() => toggleHelp('zero')} />
+          </span>
           <input
             data-testid="calib-zero"
             type="number"
             placeholder="vacío = no aplicar"
+            aria-label="Zero Trim · patrón (bar)"
             value={zeroTrim}
             onChange={(e) => setZeroTrim(e.target.value)}
             className={field}
           />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-neutral-600">
-          Span Trim · patrón (bar)
+        </div>
+        <div className="relative flex flex-col gap-1">
+          <span className="flex items-center justify-between text-xs text-neutral-600">
+            Span Trim · patrón (bar)
+            <CalParamInfo param="span" open={help === 'span'} onToggle={() => toggleHelp('span')} />
+          </span>
           <input
             data-testid="calib-span"
             type="number"
             placeholder="vacío = no aplicar"
+            aria-label="Span Trim · patrón (bar)"
             value={spanTrim}
             onChange={(e) => setSpanTrim(e.target.value)}
             className={field}
           />
-        </label>
+        </div>
       </div>
 
       {denied && (

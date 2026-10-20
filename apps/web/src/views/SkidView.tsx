@@ -14,6 +14,9 @@ function PidPanel() {
   const { snapshot, navigate, openModal } = useSim()
   const stuck = snapshot?.valveStuck ?? false
   const sensorFault = snapshot?.quality === 'BAD_SENSOR_FAILURE'
+  // Taco del vástago: a 0% de carrera asienta sobre la línea de proceso (y 92),
+  // a 100% queda levado 36 px. Refleja valveOpeningPercent en vivo.
+  const plugTop = 92 - 36 * ((snapshot?.valveOpeningPercent ?? 0) / 100)
 
   return (
     <svg
@@ -29,11 +32,20 @@ function PidPanel() {
         Manifold de producción · P1 = {snapshot?.p1Bar.toFixed(0) ?? '—'} bar
       </text>
 
-      {/* FCV-101: válvula de control (bowtie) */}
+      {/* FCV-101: válvula de control (bowtie). El taco del vástago se levanta
+          en vivo con la carrera real (valveOpeningPercent del snapshot): 0%
+          = asentado sobre el asiento, 100% = plena apertura. Con stick-slip
+          activo el símbolo se dibuja en rojo con el distintivo "VÁSTAGO
+          PEGADO" (corrección v0.9.0: antes el símbolo era estático y la
+          válvula "parecía pegada" siempre). */}
       <g
         role="button"
         tabIndex={0}
-        aria-label="FCV-101 válvula de control — abrir faceplate"
+        aria-label={
+          stuck
+            ? 'FCV-101 válvula de control — vástago pegado — abrir faceplate'
+            : 'FCV-101 válvula de control — abrir faceplate'
+        }
         data-testid="pid-fcv-101"
         onClick={() => navigate('valve')}
         onKeyDown={(e) => e.key === 'Enter' && navigate('valve')}
@@ -41,13 +53,32 @@ function PidPanel() {
       >
         <polygon points="270,82 270,118 305,100" fill="#dad9de" stroke={stuck ? '#ed113b' : '#44424a'} strokeWidth="2" />
         <polygon points="340,82 340,118 305,100" fill="#dad9de" stroke={stuck ? '#ed113b' : '#44424a'} strokeWidth="2" />
-        <line x1="305" y1="100" x2="305" y2="52" stroke="#44424a" strokeWidth="2" />
+        <line x1="305" y1="52" x2="305" y2={plugTop} stroke="#44424a" strokeWidth="2" />
+        <rect
+          x="297"
+          y={plugTop}
+          width="16"
+          height="10"
+          fill="#efeef0"
+          stroke={stuck ? '#ed113b' : '#44424a'}
+          strokeWidth="2"
+          data-testid="valve-plug"
+          data-travel={snapshot?.valveOpeningPercent.toFixed(1) ?? ''}
+        />
         <text x="305" y="44" textAnchor="middle" fontSize="13" fontWeight="bold" fill="#504d57" fontFamily="monospace">
           FCV-101
         </text>
         <text x="305" y="140" textAnchor="middle" fontSize="11" fill="#615e6b" fontFamily="monospace">
           {snapshot ? `${snapshot.valveOpeningPercent.toFixed(0)}% · ${snapshot.pActPsi.toFixed(1)} psi` : ''}
         </text>
+        {stuck && (
+          <g data-testid="valve-stuck-badge">
+            <rect x="245" y="150" width="120" height="18" rx="2" fill="#ed113b" />
+            <text x="305" y="163" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#ffffff" fontFamily="monospace">
+              VÁSTAGO PEGADO
+            </text>
+          </g>
+        )}
       </g>
 
       {/* Línea a la vasija controlada */}

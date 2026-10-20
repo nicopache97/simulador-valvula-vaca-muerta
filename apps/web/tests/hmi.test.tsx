@@ -12,7 +12,7 @@ import { fakeSnapshot, FakeWorker, tickEvent } from './fake-worker'
 
 vi.mock('lightweight-charts', () => ({
   ColorType: { Solid: 'solid' },
-  LineStyle: { Solid: 0, Dashed: 2 },
+  LineStyle: { Solid: 0, Dotted: 1, Dashed: 2 },
   LineSeries: 'LineSeries',
   createChart: () => ({
     addSeries: () => ({ update: vi.fn() }),

@@ -3,6 +3,7 @@
  * de alarmas ISA-18.2 y tarjeta de acceso al patín de medición VM-101.
  */
 import { AlarmSymbol } from '../components/AlarmSymbol'
+import { PlantSchematic } from '../components/PlantSchematic'
 import { useSim } from '../state/sim-context'
 
 function fmtClock(t: number): string {
@@ -54,6 +55,8 @@ export function OverviewView() {
         />
         <Kpi label="Alarmas activas" testId="kpi-alarms" value={String(alarms.length)} />
       </div>
+
+      <PlantSchematic />
 
       <div className="rounded bg-neutral-100 p-3 shadow-sm" data-testid="alarm-summary">
         <h3 className="mb-2 text-sm font-semibold text-neutral-800">Resumen de alarmas (ISA-18.2)</h3>

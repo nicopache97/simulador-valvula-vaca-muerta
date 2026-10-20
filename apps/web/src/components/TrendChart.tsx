@@ -2,9 +2,7 @@
  * Tendencia en vivo (REQ-NFUN-PERF-01, ≥ 20 FPS) con lightweight-charts.
  * El worker tick a ~100 Hz; este componente acumula los puntos y los vuelca
  * a las series como máximo cada 50 ms (20 FPS) para no saturar el render.
- *
- * Las series usan solo grises (REQ-UI-01): se distinguen por tono, grosor y
- * trazo (la consigna SP va punteada, como marca de referencia).
+ * La paleta distinguible de series vive en `./trend-series` (corrección v0.9.0).
  */
 import { useEffect, useRef } from 'react'
 import {
@@ -17,25 +15,10 @@ import {
   type Time,
 } from 'lightweight-charts'
 import { useSim } from '../state/sim-context'
+import { TREND_SERIES, dashFor, type SeriesDef } from './trend-series'
 
 /** Mínimo intervalo entre volcados de puntos a las series [ms]. */
 const FLUSH_MS = 50
-
-interface SeriesDef {
-  readonly key: 'sp' | 'pv' | 'p1' | 'p2' | 'flow'
-  readonly label: string
-  readonly color: string
-  readonly lineWidth: 1 | 2
-  readonly lineStyle?: LineStyle
-}
-
-const SERIES: readonly SeriesDef[] = [
-  { key: 'sp', label: 'SP', color: '#95929e', lineWidth: 1, lineStyle: LineStyle.Dashed },
-  { key: 'pv', label: 'PV', color: '#1c1c1f', lineWidth: 2 },
-  { key: 'p1', label: 'P1', color: '#615e6b', lineWidth: 1 },
-  { key: 'p2', label: 'P2', color: '#bab8c1', lineWidth: 1 },
-  { key: 'flow', label: 'Caudal', color: '#44424a', lineWidth: 2 },
-]
 
 function fmtTime(t: number): string {
   const m = Math.floor(t / 60)
@@ -82,7 +65,7 @@ export function TrendChart() {
     chart.timeScale().fitContent()
 
     const seriesByKey = new Map<SeriesDef['key'], ISeriesApi<'Line'>>()
-    for (const def of SERIES) {
+    for (const def of TREND_SERIES) {
       seriesByKey.set(
         def.key,
         chart.addSeries(LineSeries, {
@@ -104,6 +87,7 @@ export function TrendChart() {
         values: {
           sp: snapshot.spBar,
           pv: snapshot.pvBar,
+          pos: snapshot.valveOpeningPercent,
           p1: snapshot.p1Bar,
           p2: snapshot.p2Bar,
           flow: snapshot.flowM3h,
@@ -115,7 +99,7 @@ export function TrendChart() {
       const batch = pending
       pending = []
       for (const point of batch) {
-        for (const def of SERIES) {
+        for (const def of TREND_SERIES) {
           seriesByKey.get(def.key)?.update({ time: point.time as Time, value: point.values[def.key] })
         }
       }
@@ -129,21 +113,28 @@ export function TrendChart() {
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex flex-wrap gap-4 px-1 text-xs text-neutral-700">
-        {SERIES.map((def) => (
-          <span key={def.key} className="inline-flex items-center gap-1.5">
-            <span
-              className="inline-block h-0.5 w-5"
-              style={{
-                backgroundColor: def.color,
-                borderTop: def.lineStyle === LineStyle.Dashed ? '2px dashed' : undefined,
-              }}
-            />
+      <ul
+        data-testid="trend-legend"
+        className="flex flex-wrap gap-x-4 gap-y-1 px-1 text-xs text-neutral-700"
+      >
+        {TREND_SERIES.map((def) => (
+          <li key={def.key} className="inline-flex items-center gap-1.5">
+            <svg width="22" height="6" aria-hidden>
+              <line
+                x1="0"
+                y1="3"
+                x2="22"
+                y2="3"
+                stroke={def.color}
+                strokeWidth={def.lineWidth}
+                strokeDasharray={dashFor(def)}
+              />
+            </svg>
             {def.label}
-          </span>
+          </li>
         ))}
-        <span className="ml-auto text-neutral-500">eje X: tiempo de proceso (mm:ss)</span>
-      </div>
+        <li className="ml-auto text-neutral-500">eje X: tiempo de proceso (mm:ss)</li>
+      </ul>
       <div ref={containerRef} data-testid="trend-chart" className="h-56 w-full" />
     </div>
   )
