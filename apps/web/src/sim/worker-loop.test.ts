@@ -164,3 +164,74 @@ describe('WorkerLoop — protocolo worker↔UI (EP-03)', () => {
     expect(Number(lines[1].split(',')[0])).toBeCloseTo(0.11, 6)
   })
 })
+
+describe('WorkerLoop — velocidad y calibración (EP-04)', () => {
+  it('setSpeed reprograma el intervalo a dt/speed sin tocar la física (dt intacto)', () => {
+    const { manual, loop, events } = setup()
+    loop.dispatch({ type: 'start' })
+    expect(manual.intervalMs).toBeCloseTo(10, 6)
+
+    loop.dispatch({ type: 'setSpeed', speed: 5 })
+    expect(manual.intervalMs).toBeCloseTo(2, 6)
+    manual.fire()
+    const tick = events.filter((e) => e.type === 'tick').at(-1)
+    if (tick?.type !== 'tick') throw new Error('tick esperado')
+    expect(tick.snapshot.dt).toBeCloseTo(0.01, 6) // el paso físico no cambia
+    expect(tick.snapshot.t).toBeCloseTo(0.01, 6)
+
+    // En pausa no reprograma nada, pero conserva la velocidad al reanudar.
+    loop.dispatch({ type: 'pause' })
+    loop.dispatch({ type: 'setSpeed', speed: 2 })
+    expect(manual.running).toBe(false)
+    loop.dispatch({ type: 'start' })
+    expect(manual.intervalMs).toBeCloseTo(5, 6)
+  })
+
+  it('calibrate con setRange(0,40) recalcula pvPercent con la nueva escala (turndown 10:1)', () => {
+    const { manual, loop, events } = setup()
+    loop.dispatch({ type: 'start' })
+    for (let i = 0; i < 10; i++) manual.fire()
+    const before = events.filter((e) => e.type === 'tick').at(-1)
+    if (before?.type !== 'tick') throw new Error('tick esperado')
+    const pv0 = before.snapshot.pvBar
+    loop.dispatch({ type: 'calibrate', urv: 40 })
+    manual.fire()
+    manual.fire()
+    const after = events.filter((e) => e.type === 'tick').at(-1)
+    if (after?.type !== 'tick') throw new Error('tick esperado')
+    // El re-rango es digital: la medición física sigue siendo la de la vasija
+    // y la escala del FB AI pasa de pv/100 a pv/40 (×2.5).
+    expect(after.snapshot.pvPercent).toBeCloseTo((after.snapshot.pvBar / 40) * 100, 6)
+    expect(after.snapshot.pvPercent).toBeGreaterThan((pv0 / 100) * 100 * 2) // escalado × >2
+  })
+
+  it('calibrate rechaza un rango con turndown superado y postea error (sin mutar el estado)', () => {
+    const { manual, loop, events } = setup()
+    loop.dispatch({ type: 'start' })
+    for (let i = 0; i < 3; i++) manual.fire()
+    loop.dispatch({ type: 'calibrate', lrv: 0, urv: 0.05 }) // 2000:1 ≫ 400:1
+    const err = events.find((e) => e.type === 'error')
+    expect(err?.type).toBe('error')
+    if (err?.type !== 'error') throw new Error('error esperado')
+    expect(err.message).toMatch(/turndown/i)
+    manual.fire()
+    const tick = events.filter((e) => e.type === 'tick').at(-1)
+    if (tick?.type !== 'tick') throw new Error('tick esperado')
+    expect(tick.snapshot.pvPercent).toBeLessThanOrEqual(100) // escala original intacta
+  })
+
+  it('calibrate aplica damping (τ): el PV se aproxima de a primer orden, sin saltos', () => {
+    const { manual, loop, events } = setup()
+    loop.dispatch({ type: 'start' })
+    for (let i = 0; i < 10; i++) manual.fire() // asentado en ≈ 30%
+    loop.dispatch({ type: 'calibrate', tau: 2 })
+    loop.dispatch({ type: 'setSp', spBar: 60 }) // forzamos un transitorio
+    manual.fire()
+    manual.fire()
+    const ticks = events.filter((e) => e.type === 'tick').slice(-2)
+    const [a, b] = ticks
+    if (a?.type !== 'tick' || b?.type !== 'tick') throw new Error('ticks esperados')
+    // Respuesta amortiguada: el PV se mueve mucho menos que el escalón SP.
+    expect(Math.abs(b.snapshot.pvBar - a.snapshot.pvBar)).toBeLessThan(1)
+  })
+})

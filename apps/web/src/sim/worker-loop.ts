@@ -11,16 +11,21 @@
  */
 import {
   createSimulation,
+  setRange,
+  spanTrim,
   stepSimulation,
   toSnapshot,
+  zeroTrim,
   type SimulationState,
 } from '@sim/physics'
 import type {
+  SimCalibrateCommand,
   SimCommand,
   SimEvent,
   SimulationConfig,
   SimulationScenario,
   SimSnapshot,
+  SimSpeed,
 } from '@sim/shared'
 
 /** Reloj inyectable (el worker pasa setInterval/performance.now). */
@@ -74,6 +79,7 @@ export function createWorkerLoop(
   let state: SimulationState = createSimulation(config)
   let running = false
   let handle: unknown
+  let speed: SimSpeed = 1
   let pendingSp: number | undefined
   let pendingScenario: SimulationScenario | undefined
   let tickCount = 0
@@ -102,7 +108,30 @@ export function createWorkerLoop(
   function start(): void {
     if (running) return
     running = true
-    handle = clock.setInterval(tick, state.config.dt * 1000)
+    handle = clock.setInterval(tick, (state.config.dt * 1000) / speed)
+  }
+
+  /** Re-programa el intervalo con la velocidad actual (si está corriendo). */
+  function reschedule(): void {
+    if (!running) return
+    clock.clearInterval(handle)
+    handle = clock.setInterval(tick, (state.config.dt * 1000) / speed)
+  }
+
+  /** Aplica los comandos AMS/HART al transmisor vivo del estado. */
+  function calibrate(cmd: SimCalibrateCommand): void {
+    try {
+      let tx = state.tx
+      if (cmd.zeroTrim !== undefined) tx = zeroTrim(tx, cmd.zeroTrim)
+      if (cmd.spanTrim !== undefined) tx = spanTrim(tx, cmd.spanTrim)
+      if (cmd.lrv !== undefined || cmd.urv !== undefined) {
+        tx = setRange(tx, cmd.lrv ?? tx.config.lrv, cmd.urv ?? tx.config.urv)
+      }
+      if (cmd.tau !== undefined) tx = { ...tx, config: { ...tx.config, tau: cmd.tau } }
+      state = { ...state, tx }
+    } catch (error) {
+      post({ type: 'error', message: error instanceof Error ? error.message : String(error) })
+    }
   }
 
   function pause(): void {
@@ -148,6 +177,13 @@ export function createWorkerLoop(
           requestId: cmd.requestId,
           csv: [CSV_HEADER, ...buffer.map(snapshotRow)].join('\n'),
         })
+        break
+      case 'setSpeed':
+        speed = cmd.speed
+        reschedule()
+        break
+      case 'calibrate':
+        calibrate(cmd)
         break
     }
   }

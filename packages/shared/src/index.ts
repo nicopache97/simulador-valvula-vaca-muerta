@@ -143,6 +143,30 @@ export interface SimExportRequestCommand {
   readonly type: 'exportRequest'
   readonly requestId: string
 }
+/** Multiplicador de velocidad de la simulación (EP-04, barra superior). */
+export type SimSpeed = 1 | 2 | 5
+export interface SimSetSpeedCommand {
+  readonly type: 'setSpeed'
+  readonly speed: SimSpeed
+}
+/**
+ * Comandos de campo tipo AMS/HART sobre el transmisor vivo (EP-04, Nivel 4).
+ * Campos ausentes = sin cambio. Los rechazos del transmisor (p. ej. turndown
+ * superado en `setRange`) se reportan como evento `error`.
+ */
+export interface SimCalibrateCommand {
+  readonly type: 'calibrate'
+  /** Re-rango digital LRV [bar]. Requiere `urv` coherente. */
+  readonly lrv?: number
+  /** Re-rango digital URV [bar]. */
+  readonly urv?: number
+  /** Damping del FB AI (τ) [s]. */
+  readonly tau?: number
+  /** Zero Trim: patrón aplicado al proceso [bar] (HART cmd 35). */
+  readonly zeroTrim?: number
+  /** Span Trim: patrón aplicado al proceso [bar] (HART cmd 36). */
+  readonly spanTrim?: number
+}
 
 export type SimCommand =
   | SimInitCommand
@@ -152,6 +176,8 @@ export type SimCommand =
   | SimSetSpCommand
   | SimSetScenarioCommand
   | SimExportRequestCommand
+  | SimSetSpeedCommand
+  | SimCalibrateCommand
 
 /** Eventos worker → UI. */
 export type SimEvent =
