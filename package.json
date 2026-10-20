@@ -16,7 +16,9 @@
     "test:e2e": "npm run build -w @sim/server && npm run test:e2e -w @sim/web",
     "build": "npm run build -w @sim/shared -w @sim/physics && npm run build -w @sim/server -w @sim/web",
     "build:fmu": "npm run build:fmu -w @sim/fmu",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "build:web": "npm run build -w @sim/web",
+    "deploy:web": "npm run build:web && vercel deploy apps/web/dist --prod"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

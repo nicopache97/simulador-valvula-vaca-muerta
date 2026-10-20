@@ -208,6 +208,15 @@ npm run test:e2e   # recorrido e2e único (Playwright/Chromium; opt-in, levanta 
 npm run build:fmu  # compila la FMU FMI 3.0 WASM (AssemblyScript) en packages/fmu/dist/
 ```
 
+**Deploy en Vercel (HMI estática):**
+
+```bash
+npx vercel login          # una sola vez (auth en navegador)
+npm run deploy:web        # buildea y despliega apps/web/dist en producción
+```
+
+El deploy es **estático y autocontenido**: toda la simulación corre en el navegador (worker WASM-free a 100 Hz), así que funciona completo en "modo offline". La API (RBAC + auditoría) no se despliega en Vercel: usa SQLite con módulo nativo y proceso largo, lo que requiere un host always-on (p. ej. Railway/Render/VPS). Conectar el repo de GitHub directamente a Vercel no funciona de fábrica por la resolución de workspaces de npm en el build remoto (por eso el deploy es por CLI sobre `dist/` precompilado).
+
 Estructura del repo (npm workspaces):
 
 ```

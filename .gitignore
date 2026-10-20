@@ -11,3 +11,4 @@ data
 # Artefactos de Playwright (EP-07)
 test-results
 playwright-report
+.vercel
