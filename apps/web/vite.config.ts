@@ -7,7 +7,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://localhost:3001',
+      // Target del backend configurable (el e2e EP-07 usa SIM_API_URL para
+      // no depender de lo que haya corriendo en :3001).
+      '/api': process.env.SIM_API_URL ?? 'http://localhost:3001',
     },
   },
   test: {

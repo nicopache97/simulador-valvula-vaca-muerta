@@ -56,7 +56,7 @@ Implementado en este repo: EP-00 (setup), EP-01 (motor físico), EP-02 (transmis
 
 ### Con propósito (la lógica unificadora)
 - **Nada de botones o flujos aislados.** Cada acción de la UI es un paso del mismo recorrido: *operar la planta → diagnosticar → calibrar → aprender*.
-- Debe existir **un solo recorrido e2e** (Playwright) que ejercite la lógica completa de simulación en una pasada: arrancar simulación → mover consigna → ver firma de válvula → inyectar falla → ver alarma ISA-18.2 → calibrar transmisor → exportar tendencia.
+- Debe existir **un solo recorrido e2e** (Playwright) que ejercite la lógica completa de simulación en una pasada: arrancar simulación → mover consigna → ver firma de válvula → inyectar falla → ver alarma ISA-18.2 → calibrar transmisor → exportar tendencia. Vive en `apps/web/e2e/recorrido.e2e.ts` (TC-E2E-01) y corre con `npm run test:e2e` en la raíz — opt-in, separado de `npm run test` (no bloquea CI sin navegador). El config levanta por `webServer` el API en :3101 (DB `:memory:`) y el dev server Vite en :5173 (proxy `/api` vía `SIM_API_URL`), hermético respecto del backend de desarrollo en :3001.
 - **Todo comportamiento invisible en la realidad se explica en pantalla**: la UI debe auto-explicar qué está pasando (p. ej. "caudal saturado por cavitación crítica: P1−P2 ≥ F_L²(P1−r_c·P_v)"), con alertas contextualizadas al mundo real de Vaca Muerta.
 - Cada épica debe dejar un **aprendizaje** verificable: el operario termina sabiendo algo que no sabía (histéresis, zona muerta, turndown, cavitación).
 
@@ -71,7 +71,7 @@ Implementado en este repo: EP-00 (setup), EP-01 (motor físico), EP-02 (transmis
 | EP-04 | HMI niveles 1–4 (ISA-101): tendencias, indicadores de barra con bandas, faceplate de firma de válvula, calibración | REQ-UI-01..04 | hecho (v0.5.0) |
 | EP-05 | FMU FMI 3.0 (co-simulation) vía AssemblyScript/WASM + validación del modelDescription.xml contra el XSD oficial 3.0.2 | REQ-GEN-02, TC-GEN-02 | hecho (v0.6.0) |
 | EP-06 | Backend: RBAC (Operador/Técnico/Ingeniero), auditoría, exportación CSV/JSON de tendencias | REQ-NFUN-SEC-01, REQ-NFUN-PORT-01 | hecho (v0.7.0) |
-| EP-07 | Recorrido e2e único + modo "explicación" auto-contextualizada | principio Con propósito | pendiente |
+| EP-07 | Recorrido e2e único + modo "explicación" auto-contextualizada | REQ-E2E-01, TC-E2E-01 | hecho (v0.8.0) |
 
 **Fuera de alcance hasta nuevo aviso** (decisión registrada 2026-10-20): Scheduled Execution (REQ-FUN-SIM-03), Intermediate Update (REQ-FUN-SIM-01) y Early Return (REQ-FUN-SIM-02) quedan para fase posterior — el PID corre dentro del paso de co-simulación.
 

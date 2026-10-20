@@ -243,6 +243,8 @@ export function toSnapshot(sim: SimulationState): SimSnapshot {
     spBar: sim.spBar,
     pvBar: sim.tx.pv,
     pvPercent: sim.tx.pvPercent,
+    txLrvBar: sim.tx.config.lrv,
+    txUrvBar: sim.tx.config.urv,
     quality: sim.tx.quality,
     valveOpeningPercent: sim.valve.x * 100,
     valveStuck: sim.valve.stuck,

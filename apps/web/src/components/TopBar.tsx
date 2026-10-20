@@ -46,6 +46,7 @@ export function TopBar() {
     setScenario,
     requestExport,
     exportStatus,
+    serverOnline,
     view,
   } = useSim()
   const alarmCount = snapshot?.alarms.length ?? 0
@@ -55,7 +56,7 @@ export function TopBar() {
       <div className="flex items-baseline gap-2">
         <h1 className="text-base font-bold text-neutral-950">Simulador Vaca Muerta</h1>
         <span className="rounded bg-neutral-300 px-1.5 py-0.5 font-mono text-xs text-neutral-700">
-          v0.7.0
+          v0.8.0
         </span>
       </div>
 
@@ -152,6 +153,15 @@ export function TopBar() {
           ))}
         </select>
       </label>
+      <span
+        data-testid="server-status"
+        title="Estado de la sesión con el backend (RBAC + auditoría, REQ-NFUN-SEC-01)"
+        className="text-xs text-neutral-600"
+      >
+        {serverOnline
+          ? '● servidor en línea — comandos auditados'
+          : '○ modo offline — validación local de rol'}
+      </span>
 
       {/* Escenario y exportación (operación de la cara visible) */}
       {view !== 'overview' && (

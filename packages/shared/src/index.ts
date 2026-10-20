@@ -94,6 +94,10 @@ export interface SimSnapshot {
   readonly pvBar: number
   /** PV en % de escala (AI.PV de 0 a 100). */
   readonly pvPercent: number
+  /** LRV configurado del FB AI [bar] (re-rango vía calibrate, REQ-FUN-TRM-02). */
+  readonly txLrvBar: number
+  /** URV configurado del FB AI [bar]. */
+  readonly txUrvBar: number
   readonly quality: SimSignalQuality
   /** Posición del vástago [% de carrera]. */
   readonly valveOpeningPercent: number

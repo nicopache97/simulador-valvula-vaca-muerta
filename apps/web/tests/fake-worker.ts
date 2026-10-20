@@ -37,6 +37,8 @@ export const BASE_SNAPSHOT: SimSnapshot = {
   spBar: 30,
   pvBar: 29.8,
   pvPercent: 29.8,
+  txLrvBar: 0,
+  txUrvBar: 100,
   quality: 'GOOD',
   valveOpeningPercent: 43.2,
   valveStuck: false,

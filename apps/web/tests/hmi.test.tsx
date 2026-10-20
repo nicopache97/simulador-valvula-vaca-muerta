@@ -76,6 +76,11 @@ describe('HMI EP-04 — barra superior global', () => {
     expect(screen.getByTestId('alarm-count')).toHaveTextContent('3')
     expect(screen.getByTestId('alarm-bell')).toHaveAccessibleName('3 alarmas activas')
   })
+
+  it('sin backend responde "modo offline" en el indicador de servidor', () => {
+    renderApp()
+    expect(screen.getByTestId('server-status')).toHaveTextContent('modo offline')
+  })
 })
 
 describe('HMI EP-04 — Nivel 1 (macro yacimiento)', () => {
@@ -260,6 +265,17 @@ describe('HMI EP-04 — Nivel 4 (firma de válvula y calibración AMS)', () => {
     const readout = screen.getByTestId('hysteresis-readout')
     expect(readout).toHaveTextContent(/Ancho de histéresis al 50%/)
     expect(readout).toHaveTextContent(/2\.4\d psi/)
+  })
+
+  it('la pestaña Calibración muestra la indicación viva del FB AI (% de escala, bar y calidad)', () => {
+    renderApp(fakeSnapshot({ pvPercent: 29.8, pvBar: 29.8, quality: 'GOOD' }))
+    goToSkid()
+    fireEvent.click(screen.getByTestId('open-calibration-modal'))
+    const readout = screen.getByTestId('tx-readout')
+    expect(readout).toHaveTextContent('29.8 % de escala')
+    expect(readout).toHaveTextContent('29.8 bar')
+    expect(readout).toHaveTextContent('rango 0–100 bar')
+    expect(readout).toHaveTextContent('calidad GOOD')
   })
 
   it('rol Operador: Aplicar deshabilitado con ERR_ACCESS_DENIED (REQ-NFUN-SEC-01)', () => {

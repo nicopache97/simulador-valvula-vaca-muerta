@@ -50,7 +50,7 @@ function SignatureTab() {
 }
 
 function CalibrationTab() {
-  const { role, calibrate, calibStatus, serverOnline } = useSim()
+  const { role, calibrate, calibStatus, serverOnline, snapshot } = useSim()
   const [lrv, setLrv] = useState('0')
   const [urv, setUrv] = useState('100')
   const [tau, setTau] = useState('0')
@@ -71,6 +71,15 @@ function CalibrationTab() {
         Comandos de campo HART/AMS sobre el PT-101 (transmisor vivo). El re-rango es digital: no
         toca la medición física, solo la escala del FB AI (turndown máx. 400:1).
       </p>
+      {snapshot && (
+        <p
+          data-testid="tx-readout"
+          className="rounded-sm bg-neutral-50 px-2 py-1 font-mono text-sm text-neutral-900"
+        >
+          AI.PV: {snapshot.pvPercent.toFixed(1)} % de escala · {snapshot.pvBar.toFixed(1)} bar
+          (rango {snapshot.txLrvBar}–{snapshot.txUrvBar} bar) · calidad {snapshot.quality}
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         <label className="flex flex-col gap-1 text-xs text-neutral-600">
           LRV (bar)
