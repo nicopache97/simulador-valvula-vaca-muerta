@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v0.3.0 — EP-02: Transmisores inteligentes y sistema AMS `packages/physics` (2026-10-20)
+
+- **REQ-FUN-TRM-01** — Transmisor con arquitectura de bloques Fieldbus/HART (`src/transmitter.ts`): Resource Block (tag, fabricante, modelo, serie, device status), Transducer Block (lectura primaria con `sensorBias` simulable, caracterización identity/sqrt, deriva térmica residual por °C, bandera `TB_Sensor_Fault`), Function Block AI (escalamiento LRV/URV, damping de primer orden con τ configurable, clamping 0–100% con limitStatus, `AI.PV` en unidades de ingeniería + % de escala con `AI.PV.Quality` GOOD/UNCERTAIN/BAD_SENSOR_FAILURE). API pura: `createTransmitter`, `stepTransmitter`, `setSensorFault`. El damping usa actualización exacta de primer orden (`1 − e^(−dt/τ)`), por lo que la respuesta al escalón coincide con la exponencial continua en cualquier t.
+- **REQ-FUN-TRM-02** — Comandos AMS/HART: `zeroTrim` (corrección de offset), `spanTrim` (corrección de ganancia) y `setRange` (re-rango digital puro) con límite de turndown configurable (default 400:1; `nominalSpan/span > maxTurndown` → excepción).
+- **REQ-FUN-PID-01** — FB PID mínimo P+I (`src/pid.ts`): `createPid({kp, ti, outMin, outMax})`, `stepPid(state, sp, pv, dt)`, anti-windup por integración condicional (saturado no acumula integral). Base para cerrar el lazo en EP-04.
+- **Tests (Vitest, 11 nuevos, 20 verdes en physics):** TC-FUN-TRM-01 (exponencial τ=2.0 s exacta al τ y 3τ, forma de curva monótona, falla de sensor → BAD_SENSOR_FAILURE en el mismo paso con RB FAILURE y retención del último valor), TC-FUN-TRM-02 (0–400 mbar: 20 mbar = 5% → setRange(0,40) → 50.0% exacto), TC-FUN-TRM-02a/02b (zero/span trim corrigen offset/ganancia con patrón conocido), TC-FUN-TRM-02c (límite turndown 400:1 y rangos inválidos rechazados), clamping HIGH/LOW_LIMITED, compensación térmica, TC-FUN-PID-01 (anti-windup: 5 s saturado → integral 0, destaturar sin sobrepaso).
+- **Docs:** REQ-FUN-TRM-01/02, REQ-FUN-PID-01 y TC asociados en `docs/requerimientos.md` con versión v0.3.0.
+- REQ/TC agregados: REQ-FUN-TRM-01/02, REQ-FUN-PID-01, TC-FUN-TRM-01/02/02a/02b/02c, TC-FUN-PID-01.
+- Métricas: no aplica (sin requisito de rendimiento nuevo; el costo por paso del transmisor es comparable al de la válvula, ~µs).
+
 ## v0.2.0 — EP-01: Motor físico de válvulas `packages/physics` (2026-10-20)
 
 - **REQ-FUN-VAL-01** — Dinámica vástago-actuador (`src/valve.ts`): balance de fuerzas en presión equivalente (psi): resorte con pre-carga, fricción Coulomb stick-slip (estático/dinámico), zona muerta adicional en presión, tope de carrera. API pura y funcional: `createValve(config)`, `step(valveState, pAct, dt)` (Euler semi-implícito, dt configurable). Defaults para actuador 3–15 psi (pre-carga 5 psi, k = 8 psi/unidad, ζ = 0.9).
