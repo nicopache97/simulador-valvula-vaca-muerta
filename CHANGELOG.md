@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v0.9.1 — Fix visual: solapamiento de etiquetas en el esquema de planta del Nivel 1 (2026-10-20)
+
+Corrección de posicionamiento en `apps/web/src/components/PlantSchematic.tsx` (corrección sobre REQ-UI-03, no es requerimiento nuevo): tres etiquetas quedaban pegadas o encima de las figuras SVG —
+
+- **"línea de proceso · P1 = … bar"** se dibujaba sobre la línea de proceso (tachada por el trazo): pasa de `(150, 84)` a `(165, 70)` — ~22 px de aire sobre el borde superior de la línea (y=94.5); el desplazamiento en x libera también el cabezal del pozo (top y=74, x≤58).
+- **"P2 = … bar"** quedaba dentro/superpuesta al cuerpo del colector: sale del rect y pasa de `(474, 108)` a `(474, 126)` — ~10 px por debajo del borde inferior del colector (y≈107), en área libre.
+- **"… m³/h"** quedaba pegado al tramo válvula→colector y sobre el vástago del PT-101: sube de `(352, 84)` a `(352, 70)`, alineado en el mismo eje de aire que la etiqueta P1 (debajo del tramo no hay lugar: lo ocupa el vástago del PT-101, y 96–122).
+
+Sin cambios de estilo (gris ISA-101 intacto), sin cambios de `viewBox` (0 0 640 210, nada se corta), `data-testid` y accesibilidad inalterados (el esquema sigue siendo `role="button"` y navega al Nivel 2). Tests de `apps/web/tests/ux-v090.test.tsx` sin cambios de selectores (verifican contenido/testid, no píxeles) y siguen en verde; badge de versión de la HMI (TopBar) y versiones de raíz y `@sim/web` a 0.9.1.
+
 ## v0.9.0 — Mejoras de UX del reporte del dueño del producto: esquema de planta, tendencia distinguible, válvula en vivo y ayuda de calibración (2026-10-20)
 
 Cuatro problemas de UX reportados tras usar la app, cada uno reproducido/verificado por inspección del código antes de corregirlo, con test nuevo (12) por problema y documentación de la causa:

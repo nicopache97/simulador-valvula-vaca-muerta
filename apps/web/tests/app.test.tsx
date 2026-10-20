@@ -24,10 +24,10 @@ describe('App — ciclo de vida del worker (EP-03/04)', () => {
     vi.unstubAllGlobals()
   })
 
-  it('renderiza el título y la versión v0.9.0', () => {
+  it('renderiza el título y la versión v0.9.1', () => {
     render(<App />)
     expect(screen.getByRole('heading', { name: /simulador vaca muerta/i })).toBeInTheDocument()
-    expect(screen.getByText('v0.9.0')).toBeInTheDocument()
+    expect(screen.getByText('v0.9.1')).toBeInTheDocument()
   })
 
   it('arranca el worker de simulación con init + start al montar', () => {

@@ -46,7 +46,10 @@ export function PlantSchematic() {
 
       {/* Línea de proceso desde el cabezal */}
       <line x1="68" y1="96" x2="240" y2="96" stroke={INK} strokeWidth="3" />
-      <text x="150" y="84" textAnchor="middle" fontSize="11" fill={INK_FAINT} fontFamily="monospace">
+      {/* Etiqueta P1 por encima de la línea con aire: baseline y=70 ⇒ ~22 px de
+          separación del borde superior del trazo (y=94.5). x=165 desplaza el
+          bloque de texto (~62–268) fuera del cabezal (top y=74, x≤58). */}
+      <text x="165" y="70" textAnchor="middle" fontSize="11" fill={INK_FAINT} fontFamily="monospace">
         línea de proceso · P1 = {snapshot?.p1Bar.toFixed(0) ?? '—'} bar
       </text>
 
@@ -76,7 +79,10 @@ export function PlantSchematic() {
 
       {/* Tramo aguas abajo de la válvula */}
       <line x1="310" y1="96" x2="392" y2="96" stroke={INK} strokeWidth="3" />
-      <text x="352" y="84" textAnchor="middle" fontSize="11" fill={INK_FAINT} fontFamily="monospace">
+      {/* Caudal por encima del tramo válvula→colector: baseline y=70, mismo
+          eje de aire que la etiqueta P1; debajo queda ocupado por el vástago
+          del PT-101 (x=352, y 96–122). */}
+      <text x="352" y="70" textAnchor="middle" fontSize="11" fill={INK_FAINT} fontFamily="monospace">
         {snapshot ? `${snapshot.flowM3h.toFixed(0)} m³/h` : ''}
       </text>
 
@@ -98,7 +104,9 @@ export function PlantSchematic() {
         <text x="474" y="92" textAnchor="middle" fontSize="11" fill={INK_SOFT} fontFamily="monospace">
           Colector
         </text>
-        <text x="474" y="108" textAnchor="middle" fontSize="11" fill={INK_SOFT} fontFamily="monospace">
+        {/* P2 fuera del cuerpo del colector: baseline y=126 ⇒ ~10 px por
+            debajo del borde inferior del rect (y≈107), en área libre. */}
+        <text x="474" y="126" textAnchor="middle" fontSize="11" fill={INK_SOFT} fontFamily="monospace">
           P2 = {snapshot?.p2Bar.toFixed(1) ?? '—'} bar
         </text>
       </g>
