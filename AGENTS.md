@@ -61,7 +61,7 @@ Nada implementado en este repo aún. Plantillas verificadas en otros proyectos d
 | ID | Épica | REQ que cierra | Estado |
 |---|---|---|---|
 | EP-00 | Setup monorepo + plantilla Vite + CI (test/build en verde) | — (infraestructura) | hecho (v0.1.0) |
-| EP-01 | Motor físico `packages/physics`: dinámica de válvula (histéresis, zona muerta, fricción de empaquetadura, resorte) + caudal IEC 60534 (Cv, F_L, cavitación) | REQ-FUN-VAL-01/02, TC-FUN-VAL-01/02 | pendiente |
+| EP-01 | Motor físico `packages/physics`: dinámica de válvula (histéresis, zona muerta, fricción de empaquetadura, resorte) + caudal IEC 60534 (Cv, F_L, cavitación) | REQ-FUN-VAL-01/02, TC-FUN-VAL-01/02 | hecho (v0.2.0) |
 | EP-02 | Transmisor inteligente: bloques RB/TB/FB, damping, calidad de señal, autocalibración y turndown | REQ-FUN-TRM-01/02 | pendiente |
 | EP-03 | Worker de simulación en tiempo real (100 Hz) + contrato de tipos compartidos | REQ-GEN-01, REQ-NFUN-PERF-01 | pendiente |
 | EP-04 | HMI niveles 1–4 (ISA-101): tendencias, indicadores de barra con bandas, faceplate de firma de válvula, calibración | REQ-UI-01..04 | pendiente |

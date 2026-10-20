@@ -1,2 +1,5 @@
-/** Frecuencia de integración del motor físico (REQ-GEN-01: Δt ≤ 10 ms). */
-export const PHYSICS_SAMPLE_RATE_HZ = 100
+export { PHYSICS_SAMPLE_RATE_HZ } from './constants'
+export { createValve, dynamicFrictionPsi, springPressurePsi, step, VALVE_DEFAULTS } from './valve'
+export type { ValveConfig, ValveState } from './valve'
+export { characteristicFactor, computeFlow, createFlowConfig, KV_PER_CV } from './flow'
+export type { FlowConfig, FlowResult, ValveCharacteristic } from './flow'
