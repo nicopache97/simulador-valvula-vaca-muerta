@@ -22,3 +22,16 @@ export type {
   TransmitterConfig,
   TransmitterState,
 } from './transmitter'
+export {
+  ACTUATOR_MIN_PSI,
+  ACTUATOR_SPAN_PSI,
+  createSimulation,
+  DEVIATION_BAND_BAR,
+  stepSimulation,
+  toSnapshot,
+} from './engine'
+export type {
+  ResolvedSimulationConfig,
+  SimulationInputs,
+  SimulationState,
+} from './engine'

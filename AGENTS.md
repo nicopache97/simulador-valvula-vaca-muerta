@@ -31,7 +31,7 @@ Nada implementado en este repo aún. Plantillas verificadas en otros proyectos d
 - `~/Documentos/manhattan-one/packages/ui-components/src/audio-visualize/` → patrón de **loop en vivo + cleanup** (rAF/canvas) como referencia del worker de simulación.
 - `~/Documentos/cursos/02-scada.md` y `04-proyecto-integrador.md` → modelo de dominio SCADA (tags, scan classes, ACK, shelving, interlocks).
 
-**No existe en ningún lado** (se escribe de cero): worker de simulación, física/ODEs de válvula (EP-01 ya cubierto en `packages/physics`), FMU. Los bloques RB/TB/AI y el PID mínimo de transmisores viven en `packages/physics/src/transmitter.ts` y `pid.ts` (EP-02, v0.3.0).
+**No existe en ningún lado** (se escribe de cero): FMU. Engine de orquestación, worker de simulación y contrato de mensajes worker↔UI: EP-03, vive en `packages/physics/src/engine.ts` (puro, determinista), `apps/web/src/sim/` (worker Vite + loop con reloj inyectado) y `packages/shared/src/index.ts` (protocolo tipado). Los bloques RB/TB/AI y el PID mínimo de transmisores viven en `packages/physics/src/transmitter.ts` y `pid.ts` (EP-02, v0.3.0).
 
 ## 3. Principios de trabajo (innegociables)
 
@@ -63,7 +63,7 @@ Nada implementado en este repo aún. Plantillas verificadas en otros proyectos d
 | EP-00 | Setup monorepo + plantilla Vite + CI (test/build en verde) | — (infraestructura) | hecho (v0.1.0) |
 | EP-01 | Motor físico `packages/physics`: dinámica de válvula (histéresis, zona muerta, fricción de empaquetadura, resorte) + caudal IEC 60534 (Cv, F_L, cavitación) | REQ-FUN-VAL-01/02, TC-FUN-VAL-01/02 | hecho (v0.2.0) |
 | EP-02 | Transmisor inteligente: bloques RB/TB/FB, damping, calidad de señal, autocalibración y turndown | REQ-FUN-TRM-01/02 | hecho (v0.3.0) |
-| EP-03 | Worker de simulación en tiempo real (100 Hz) + contrato de tipos compartidos | REQ-GEN-01, REQ-NFUN-PERF-01 | pendiente |
+| EP-03 | Worker de simulación en tiempo real (100 Hz) + contrato de tipos compartidos | REQ-GEN-01, REQ-NFUN-PERF-01 | hecho (v0.4.0) |
 | EP-04 | HMI niveles 1–4 (ISA-101): tendencias, indicadores de barra con bandas, faceplate de firma de válvula, calibración | REQ-UI-01..04 | pendiente |
 | EP-05 | FMU FMI 3.0 (co-simulation básica) vía AssemblyScript/WASM + validación con FMPy | REQ-GEN-02, TC-GEN-02 | pendiente |
 | EP-06 | Backend: RBAC (Operador/Técnico/Ingeniero), auditoría, exportación CSV/JSON de tendencias | REQ-NFUN-SEC-01, REQ-NFUN-PORT-01 | pendiente |
