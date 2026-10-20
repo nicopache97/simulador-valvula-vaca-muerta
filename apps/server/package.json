@@ -1,7 +1,7 @@
 {
   "name": "@sim/server",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.7.0",
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -10,9 +10,12 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",
+    "@sim/shared": "*",
+    "better-sqlite3": "^12.11.1",
     "hono": "^4.9.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^24.12.3",
     "typescript": "~6.0.2",
     "vitest": "^4.1.8"

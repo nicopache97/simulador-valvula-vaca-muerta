@@ -3,3 +3,8 @@ dist
 coverage
 *.tsbuildinfo
 .DS_Store
+# SQLite del backend EP-06 (SIM_DB default data/sim.db)
+data
+*.db
+*.db-wal
+*.db-shm

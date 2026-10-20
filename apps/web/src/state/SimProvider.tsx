@@ -3,6 +3,13 @@
  * snapshot decimado (indicadores), la suscripción de alta frecuencia
  * (tendencias a 20+ FPS), la navegación de niveles 1–4, el rol de usuario
  * y los comandos de campo (exportar, calibrar, ciclo de firma).
+ *
+ * EP-06 (REQ-NFUN-SEC-01): al cambiar de rol se autentica contra el backend
+ * (`POST /api/login`, usuarios demo `operator`/`technician`/`engineer`).
+ * El comando de calibración pasa primero por `POST /api/calibrate`: un 403
+ * se muestra como ERR_ACCESS_DENIED (rechazo auditado en servidor). Si el
+ * server no responde (modo offline) se recae en la validación local de rol
+ * sin romper la simulación.
  */
 import {
   useCallback,
@@ -39,6 +46,9 @@ export function SimProvider({ children }: { children: ReactNode }) {
   const [signature, setSignature] = useState<SignatureCycle | null>(null)
   const [exportStatus, setExportStatus] = useState<string | null>(null)
   const [calibStatus, setCalibStatus] = useState<string | null>(null)
+  const [serverAuth, setAuth] = useState<{ token: string; role: UserRole } | null>(null)
+  /** Sesión válida solo si corresponde al rol activo. */
+  const serverOnline = serverAuth !== null && serverAuth.role === role
   const [resetSeq, setResetSeq] = useState(0)
   const tickListeners = useRef(new Set<(snapshot: SimSnapshot) => void>())
   const lastIndicatorUpdate = useRef(0)
@@ -70,6 +80,41 @@ export function SimProvider({ children }: { children: ReactNode }) {
       workerRef.current = null
     }
   }, [])
+
+  /**
+   * Autentica el rol activo contra el backend; sin server ⇒ modo offline.
+   * La sesión lleva su rol: si cambia el usuario antes de reautenticar, el
+   * token viejo queda descartado (serverOnline se deriva de la coincidencia).
+   */
+  useEffect(() => {
+    let cancelled = false
+    const username = role.toLowerCase()
+    try {
+      fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password: 'vaca2026' }),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error(`login ${res.status}`)
+          return res.json() as Promise<{ token: string }>
+        })
+        .then((body) => {
+          if (!cancelled) setAuth({ token: body.token, role })
+        })
+        .catch(() => {
+          if (!cancelled) setAuth(null)
+        })
+    } catch {
+      // fetch no disponible (p. ej. entornos de test): cae a offline.
+      queueMicrotask(() => {
+        if (!cancelled) setAuth(null)
+      })
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [role])
 
   const post = useCallback((cmd: Parameters<Worker['postMessage']>[0]) => {
     workerRef.current?.postMessage(cmd)
@@ -137,12 +182,52 @@ export function SimProvider({ children }: { children: ReactNode }) {
     setSignature(runSignatureCycle())
   }, [])
 
-  const calibrate = useCallback(
+  /** Modo offline: validación local de rol (fallback, no rompe la simulación). */
+  const calibrateOffline = useCallback(
     (cmd: SimCalibrateCommand) => {
+      if (role === 'OPERATOR') {
+        setCalibStatus('ERR_ACCESS_DENIED: modo offline — validación local (rol Operador sin permiso de configuración, ISA/IEC 62443)')
+        return
+      }
       post(cmd)
       setCalibStatus('Comando AMS enviado al transmisor (aplicado en el próximo tick)')
     },
-    [post],
+    [post, role],
+  )
+
+  const calibrate = useCallback(
+    (cmd: SimCalibrateCommand) => {
+      const token = serverOnline ? serverAuth.token : null
+      if (!token) {
+        calibrateOffline(cmd)
+        return
+      }
+      try {
+        fetch('/api/calibrate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(cmd),
+        })
+          .then(async (res) => {
+            if (res.status === 403) {
+              const body = (await res.json()) as { error?: string }
+              setCalibStatus(
+                `${body.error ?? 'ERR_ACCESS_DENIED'}: el servidor rechazó el comando (rol sin permiso de configuración, ISA/IEC 62443). Rechazo registrado en auditoría.`,
+              )
+              return
+            }
+            if (!res.ok) throw new Error(`calibrate ${res.status}`)
+            post(cmd)
+            setCalibStatus(
+              'Comando AMS autorizado por el servidor, enviado al transmisor y registrado en auditoría',
+            )
+          })
+          .catch(() => calibrateOffline(cmd))
+      } catch {
+        calibrateOffline(cmd)
+      }
+    },
+    [post, calibrateOffline, serverOnline, serverAuth],
   )
 
   const value = useMemo<SimContextValue>(
@@ -156,6 +241,7 @@ export function SimProvider({ children }: { children: ReactNode }) {
       signature,
       exportStatus,
       calibStatus,
+      serverOnline,
       resetSeq,
       subscribeTick,
       play,
@@ -182,6 +268,7 @@ export function SimProvider({ children }: { children: ReactNode }) {
       signature,
       exportStatus,
       calibStatus,
+      serverOnline,
       resetSeq,
       subscribeTick,
       play,

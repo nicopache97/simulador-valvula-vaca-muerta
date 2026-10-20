@@ -3,9 +3,10 @@
  *  · Firma de válvula: plano P_act vs. carrera con ciclo de histéresis
  *    (barrido 3→15→3 psi) y lectura del ancho de histéresis.
  *  · Calibración AMS: LRV/URV (re-rango), damping, Zero Trim y Span Trim del
- *    PT-101. El botón Aplicar queda deshabilitado para el rol Operador con el
- *    mensaje ERR_ACCESS_DENIED (REQ-NFUN-SEC-01, ISA/IEC 62443; el enforcement
- *    de servidor llega con EP-06).
+ *    PT-101. Con el rol Operador el comando se rechaza con ERR_ACCESS_DENIED:
+ *    offline el botón queda deshabilitado (validación local); con el backend
+ *    EP-06 en línea el botón se habilita y es el servidor quien rechaza con
+ *    403 y registra el rechazo en auditoría (REQ-NFUN-SEC-01, ISA/IEC 62443).
  */
 import { useState } from 'react'
 import { SignatureChart } from './SignatureChart'
@@ -49,13 +50,17 @@ function SignatureTab() {
 }
 
 function CalibrationTab() {
-  const { role, calibrate, calibStatus } = useSim()
+  const { role, calibrate, calibStatus, serverOnline } = useSim()
   const [lrv, setLrv] = useState('0')
   const [urv, setUrv] = useState('100')
   const [tau, setTau] = useState('0')
   const [zeroTrim, setZeroTrim] = useState('')
   const [spanTrim, setSpanTrim] = useState('')
   const denied = role === 'OPERATOR'
+  // Offline el botón queda bloqueado (validación local, TC-UI-02); online se
+  // habilita y es el servidor quien rechaza con 403 → ERR_ACCESS_DENIED
+  // auditado (TC-NFUN-SEC-01, EP-06).
+  const blocked = denied && !serverOnline
 
   const field =
     'w-32 rounded-sm border border-neutral-400 bg-neutral-50 px-2 py-1 font-mono text-sm text-neutral-900'
@@ -125,15 +130,16 @@ function CalibrationTab() {
 
       {denied && (
         <p data-testid="calib-denied" className="text-sm font-bold text-alarm-critical" role="alert">
-          ERR_ACCESS_DENIED: el rol Operador no puede ejecutar comandos de configuración
-          (ISA/IEC 62443). Se requiere rol Técnico o Ingeniero.
+          {serverOnline
+            ? 'ERR_ACCESS_DENIED: el rol Operador no puede ejecutar comandos de configuración — el servidor ISA/IEC 62443 rechazará el comando y registrará el rechazo en auditoría.'
+            : 'ERR_ACCESS_DENIED: el rol Operador no puede ejecutar comandos de configuración (ISA/IEC 62443). Se requiere rol Técnico o Ingeniero.'}
         </p>
       )}
       <div className="flex items-center gap-3">
         <button
           type="button"
           data-testid="calibrate-apply"
-          disabled={denied}
+          disabled={blocked}
           onClick={() =>
             calibrate({
               type: 'calibrate',

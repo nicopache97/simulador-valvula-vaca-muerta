@@ -26,6 +26,11 @@ export interface SimContextValue {
   readonly signature: SignatureCycle | null
   readonly exportStatus: string | null
   readonly calibStatus: string | null
+  /**
+   * true cuando el backend EP-06 responde y la sesión del rol activo está
+   * autenticada; false ⇒ modo offline con validación local de rol.
+   */
+  readonly serverOnline: boolean
   /** Se incrementa en cada reset (para reiniciar estado local de vistas). */
   readonly resetSeq: number
   /** Alta frecuencia: se invoca en cada tick del worker (~100 Hz). */

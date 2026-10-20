@@ -70,7 +70,7 @@ Implementado en este repo: EP-00 (setup), EP-01 (motor físico), EP-02 (transmis
 | EP-03 | Worker de simulación en tiempo real (100 Hz) + contrato de tipos compartidos | REQ-GEN-01, REQ-NFUN-PERF-01 | hecho (v0.4.0) |
 | EP-04 | HMI niveles 1–4 (ISA-101): tendencias, indicadores de barra con bandas, faceplate de firma de válvula, calibración | REQ-UI-01..04 | hecho (v0.5.0) |
 | EP-05 | FMU FMI 3.0 (co-simulation) vía AssemblyScript/WASM + validación del modelDescription.xml contra el XSD oficial 3.0.2 | REQ-GEN-02, TC-GEN-02 | hecho (v0.6.0) |
-| EP-06 | Backend: RBAC (Operador/Técnico/Ingeniero), auditoría, exportación CSV/JSON de tendencias | REQ-NFUN-SEC-01, REQ-NFUN-PORT-01 | pendiente |
+| EP-06 | Backend: RBAC (Operador/Técnico/Ingeniero), auditoría, exportación CSV/JSON de tendencias | REQ-NFUN-SEC-01, REQ-NFUN-PORT-01 | hecho (v0.7.0) |
 | EP-07 | Recorrido e2e único + modo "explicación" auto-contextualizada | principio Con propósito | pendiente |
 
 **Fuera de alcance hasta nuevo aviso** (decisión registrada 2026-10-20): Scheduled Execution (REQ-FUN-SIM-03), Intermediate Update (REQ-FUN-SIM-01) y Early Return (REQ-FUN-SIM-02) quedan para fase posterior — el PID corre dentro del paso de co-simulación.

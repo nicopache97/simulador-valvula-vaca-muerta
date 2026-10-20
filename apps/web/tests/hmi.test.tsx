@@ -5,7 +5,7 @@
  * contextual. Se testea DOM/ARIA/estados, no píxeles.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import App from '../src/App'
 import type { SimAlarm } from '@sim/shared'
 import { fakeSnapshot, FakeWorker, tickEvent } from './fake-worker'
@@ -299,5 +299,73 @@ describe('HMI EP-04 — Nivel 4 (firma de válvula y calibración AMS)', () => {
     expect(screen.getByRole('status')).toHaveTextContent(
       'ERR: turndown 2000.0:1 supera el límite',
     )
+  })
+})
+
+describe('HMI EP-06 — calibración contra el backend (REQ-NFUN-SEC-01)', () => {
+  beforeEach(() => {
+    FakeWorker.instances = []
+    vi.stubGlobal('Worker', FakeWorker)
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  /** Stubea fetch: /api/login siempre OK; /api/calibrate responde `calibrateStatus`. */
+  function stubServer(calibrateStatus: number) {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url === '/api/login') {
+        const body = JSON.parse(String(init?.body)) as { username: string }
+        return {
+          status: 200,
+          ok: true,
+          json: async () => ({ token: `tok-${body.username}`, username: body.username }),
+        }
+      }
+      if (url === '/api/calibrate') {
+        return {
+          status: calibrateStatus,
+          ok: calibrateStatus < 300,
+          json: async () =>
+            calibrateStatus === 403 ? { error: 'ERR_ACCESS_DENIED' } : { status: 'ok' },
+        }
+      }
+      throw new Error(`fetch inesperado: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    return fetchMock
+  }
+
+  it('con server online, Operador puede clickear Aplicar pero el 403 se muestra como ERR_ACCESS_DENIED y no llega comando al worker', async () => {
+    stubServer(403)
+    const { worker } = renderApp()
+    goToSkid()
+    fireEvent.click(screen.getByTestId('open-calibration-modal'))
+
+    // El botón se habilita una vez autenticado el rol contra el backend.
+    await waitFor(() => expect(screen.getByTestId('calibrate-apply')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('calibrate-apply'))
+
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('ERR_ACCESS_DENIED'),
+    )
+    expect(worker.commandsOfType('calibrate')).toHaveLength(0)
+  })
+
+  it('con server online, Técnico calibra: comando al worker y estado "autorizado por el servidor"', async () => {
+    stubServer(200)
+    const { worker } = renderApp()
+    goToSkid()
+    fireEvent.change(screen.getByLabelText('Rol de usuario'), { target: { value: 'TECHNICIAN' } })
+    fireEvent.click(screen.getByTestId('open-calibration-modal'))
+
+    await waitFor(() => expect(screen.getByTestId('calibrate-apply')).toBeEnabled())
+    fireEvent.change(screen.getByTestId('calib-urv'), { target: { value: '40' } })
+    fireEvent.click(screen.getByTestId('calibrate-apply'))
+
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('autorizado por el servidor'),
+    )
+    expect(worker.commandsOfType('calibrate').at(-1)).toMatchObject({ type: 'calibrate', urv: 40 })
   })
 })
