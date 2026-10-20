@@ -60,28 +60,33 @@ describe('TC-NFUN-PERF-01 — 10 000 pasos de 10 ms (EP-03)', () => {
 })
 
 describe('TC-GEN-01 (acotado EP-03) — rampa SP 0→100→0 % a 0.5 %/s', () => {
-  it('completa el ciclo sin divergencia numérica (todos los valores finitos)', () => {
-    const sim = createSimulation() // urv = 100 bar → 1 % = 1 bar de consigna
-    const ratePercentPerSec = 0.5
-    const legSec = 100 / ratePercentPerSec // 200 s por ramal
-    const totalSteps = Math.round((2 * legSec) / DT) // 40 000 pasos
+  // 80 000 pasos: ~4 s de wall-clock aislado, más bajo paralelismo de CI.
+  it(
+    'completa el ciclo sin divergencia numérica (todos los valores finitos)',
+    { timeout: 20_000 },
+    () => {
+      const sim = createSimulation() // urv = 100 bar → 1 % = 1 bar de consigna
+      const ratePercentPerSec = 0.5
+      const legSec = 100 / ratePercentPerSec // 200 s por ramal
+      const totalSteps = Math.round((2 * legSec) / DT) // 40 000 pasos
 
-    let s = sim
-    for (let i = 0; i < totalSteps; i++) {
-      const phase = i * DT
-      const spPercent =
-        phase <= legSec ? ratePercentPerSec * phase : 100 - ratePercentPerSec * (phase - legSec)
-      s = stepSimulation(s, { spBar: spPercent }, DT)
-      expectFiniteSnapshot(s)
-    }
+      let s = sim
+      for (let i = 0; i < totalSteps; i++) {
+        const phase = i * DT
+        const spPercent =
+          phase <= legSec ? ratePercentPerSec * phase : 100 - ratePercentPerSec * (phase - legSec)
+        s = stepSimulation(s, { spBar: spPercent }, DT)
+        expectFiniteSnapshot(s)
+      }
 
-    expect(s.t).toBeCloseTo(2 * legSec, 6)
-    // Al volver la consigna a 0 la válvula cierra y la vasija vacía hacia 0:
-    // el lazo sigue respondiendo (sin bloqueo ni NaN) al final del ciclo.
-    const snap = toSnapshot(s)
-    expect(snap.pvBar).toBeGreaterThanOrEqual(0)
-    expect(Math.abs(snap.pvBar - snap.spBar)).toBeLessThan(10)
-  })
+      expect(s.t).toBeCloseTo(2 * legSec, 6)
+      // Al volver la consigna a 0 la válvula cierra y la vasija vacía hacia 0:
+      // el lazo sigue respondiendo (sin bloqueo ni NaN) al final del ciclo.
+      const snap = toSnapshot(s)
+      expect(snap.pvBar).toBeGreaterThanOrEqual(0)
+      expect(Math.abs(snap.pvBar - snap.spBar)).toBeLessThan(10)
+    },
+  )
 })
 
 describe('Engine puro: determinismo y pureza (REQ-GEN-01, base FMU EP-05)', () => {
