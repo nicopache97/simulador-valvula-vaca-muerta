@@ -178,12 +178,33 @@ Las alarmas derivan del estado con codificación ISA-18.2: prioridad 1 = cuadrad
 
 Requiere Node ≥ 20.19 (el repo fija Node 22 en `.nvmrc`).
 
+**Init (primera vez):**
+
 ```bash
-npm install        # si npm 10 falla en los workspaces: npx npm@11 install
-npm run dev        # HMI en http://localhost:5173 (proxy /api → API en :3001)
+npx npm@11 install   # npm 10 global tiene un bug con workspaces; usar npm@11
+```
+
+**Start-up (cada sesión):**
+
+```bash
+npm run build                     # 1. compila server y web
+node apps/server/dist/index.js    # 2. API en http://localhost:3001 (terminal A)
+npm run dev                       # 3. HMI en http://localhost:5173 (terminal B)
+```
+
+Verificación rápida de la API: `curl http://localhost:3001/api/health` → `{"status":"ok"}`.
+
+Variables de entorno del server (todas opcionales): `PORT` (default `3001`), `SIM_DB` (ruta del SQLite, default `data/sim.db`; crea el schema y siembra los 3 usuarios demo al iniciar), `SIM_SECRET` (clave de firma de tokens; default para desarrollo).
+
+Usuarios demo (password `vaca2026` para todos): `operator`, `technician`, `engineer`.
+
+La HMI también funciona **sin la API** ("modo offline"): la simulación vive en el navegador y los roles se validan localmente sin auditoría. Con la API en línea, el indicador superior cambia a "comandos auditados" y la calibración queda registrada (`/api/audit`, solo rol `engineer`).
+
+**Otros comandos:**
+
+```bash
 npm run test       # suite unitaria de todos los workspaces (Vitest)
 npm run test:e2e   # recorrido e2e único (Playwright/Chromium; opt-in, levanta API :3101 + Vite)
-npm run build      # type-check + build de server y web
 npm run build:fmu  # compila la FMU FMI 3.0 WASM (AssemblyScript) en packages/fmu/dist/
 ```
 
